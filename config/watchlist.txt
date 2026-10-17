@@ -1,0 +1,4 @@
+# Paste your TradingView watchlist export here (Watchlist menu -> Export list...).
+# Format is comma- or newline-separated EXCHANGE:SYMBOL, e.g.:
+# NASDAQ:AAPL,NYSE:JPM,AMEX:SPY,BINANCE:BTCUSDT,BINANCE:ETHUSDT
+# Lines starting with '#' are ignored. "###Section" headers from TV exports are ignored too.

@@ -1,0 +1,5 @@
+# Used ONLY to compute position-size hints in alerts. The bot never places orders.
+account_size_usd: null          # set to enable size hints; null = omit size from alerts
+risk_per_trade_pct: 1.0
+max_alerts_per_day: 10          # beyond this, batch into a single digest message
+cooldown_bars: 5                # no repeat alert for same rule+ticker within N bars

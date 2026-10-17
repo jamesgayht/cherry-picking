@@ -1,0 +1,9 @@
+# How TradingView exchange prefixes map to data providers (until TV data integration is decided).
+equities:
+  exchanges: [NASDAQ, NYSE, AMEX, ARCA, BATS, CBOE]
+  provider: yfinance            # NASDAQ:AAPL -> AAPL
+crypto:
+  exchanges: [BINANCE, COINBASE, BYBIT, OKX, KRAKEN, BITSTAMP, CRYPTO]
+  provider: ccxt                # BINANCE:BTCUSDT -> BTC/USDT on binance
+  default_exchange: binance
+unknown_prefix: warn            # warn | skip | error

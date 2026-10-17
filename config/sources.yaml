@@ -1,0 +1,56 @@
+# Research sources for the daily brief. Each source answers ONE question.
+# Endpoints verified reachable on 2026-10-18 unless marked `verify: true`.
+# Add a source only if it answers a question nothing else here answers.
+
+market_data:                      # "What did the market and my tickers do?"
+  equities:
+    provider: yfinance            # free, no key
+    benchmarks: [SPY, QQQ, IWM, DIA, ^VIX, DX-Y.NYB, ^TNX]
+    sectors: [XLK, XLF, XLE, XLV, XLY, XLP, XLI, XLB, XLU, XLRE, XLC]
+  crypto:
+    provider: coingecko           # free demo key optional: COINGECKO_API_KEY
+    base_url: https://api.coingecko.com/api/v3
+    benchmarks: [bitcoin, ethereum, solana]
+    include: [btc_dominance, total_market_cap]
+
+movers:                           # "What's moving / which sectors are hot?"
+  finviz:
+    mode: free                    # free (fragile page parsing) | elite_export (paid, stable)
+    pages: [screener_top_gainers, screener_new_high, sector_performance]
+    rate_limit_seconds: 3
+
+calendar:                         # "What's on the calendar?"
+  provider: finnhub               # alt: fmp
+  api_key_env: FINNHUB_API_KEY
+  verify: true                    # confirm free tier covers economic + earnings calendar in Phase 1
+  lookahead_days: 10
+  economic_importance: high       # CPI, FOMC, NFP, PCE, GDP
+
+sentiment:
+  crypto_fear_greed:
+    url: https://api.alternative.me/fng/
+
+news:                             # "What's the headline news?" (RSS only, dedupe by title similarity)
+  market:
+    - {name: CNBC Top News,  url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"}
+    - {name: CNBC Economy,   url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258"}
+    - {name: CNBC Investing, url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069"}
+    - {name: MarketWatch Top Stories, url: "https://feeds.content.dowjones.io/public/rss/mw_topstories"}
+    - {name: MarketWatch MarketPulse, url: "https://feeds.content.dowjones.io/public/rss/mw_marketpulse"}
+  crypto:
+    - {name: CoinDesk,      url: "https://www.coindesk.com/arc/outboundfeeds/rss/"}
+    - {name: The Block,     url: "https://www.theblock.co/rss.xml"}
+    - {name: Cointelegraph, url: "https://cointelegraph.com/rss"}
+    - {name: Decrypt,       url: "https://decrypt.co/feed"}
+  per_ticker:                     # equities only; {symbol} filled from watchlist
+    - {name: Yahoo Finance, url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s={symbol}&region=US&lang=en-US"}
+  max_age_hours: 24
+  max_items_per_feed: 15
+
+# Deliberately excluded (2026-10-18) — revisit only with a specific need:
+#   bloomberg, seeking_alpha  -> hard paywall + anti-bot; headlines echoed by RSS above
+#   investing_com             -> anti-bot; calendar replaced by finnhub/fmp
+#   x_twitter                 -> paid API; low signal/noise
+#   perplexity_finance        -> no API; overlaps the agent's own web search
+#   newsletters               -> user doesn't read them
+#   moomoo                    -> candidate DATA provider later (OpenAPI), not a news source

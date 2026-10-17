@@ -1,0 +1,9 @@
+# All times in user timezone. Code must convert US session times with zoneinfo (DST-aware).
+timezone: Asia/Singapore
+daily_brief:
+  weekdays: "20:30"             # ~1h before US open (21:30 SGT summer / 22:30 winter) - adjust to taste
+  weekend_crypto_digest: "10:00"  # Sat & Sun
+scanner:
+  us_equity: "after_close+15m"  # ~04:15/05:15 SGT on daily candle close
+  crypto_4h: [0, 4, 8, 12, 16, 20]  # UTC 4H closes (=08:00, 12:00, ... SGT), +5m buffer
+  crypto_1d: "08:05"            # daily candle closes 00:00 UTC = 08:00 SGT

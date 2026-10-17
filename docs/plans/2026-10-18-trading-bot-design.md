@@ -1,7 +1,7 @@
 # Trading Bot — Design (DRAFT, pending approval)
 
 Date: 2026-10-18
-Status: Draft — awaiting review. TradingView data integration deferred (see §7).
+Status: Overview approved 2026-10-18; detailed review pending. TradingView data integration deferred (see §7).
 
 ## 1. Goals
 
@@ -18,6 +18,9 @@ Status: Draft — awaiting review. TradingView data integration deferred (see §
 | Backtesting | Python (vectorbt or backtesting.py), walk-forward |
 | Delivery | Telegram (push brief + signals), Google Sheets (logs/tables) |
 | Research cadence | Scheduled pre-market + manual on demand |
+| User timezone | Asia/Singapore — all schedules in `config/schedule.yaml` |
+| Watchlist | Maintained in TradingView, exported to `config/watchlist.txt` |
+| Research sources | `config/sources.yaml` — yfinance, CoinGecko, Finviz, Finnhub calendar, RSS (CNBC, MarketWatch, Yahoo per-ticker, CoinDesk, The Block, Cointelegraph, Decrypt), crypto Fear & Greed |
 | TradingView data | **Open** — isolated behind a data-provider interface |
 
 ## 2. Architecture (Approach C: split by determinism)
@@ -83,11 +86,11 @@ docs/plans/    design docs
 
 ## 4. Agents
 
-### research-analyst (scheduled ~08:00 ET weekdays + crypto weekend digest; or `/research`)
+### research-analyst (scheduled 20:30 SGT weekdays + 10:00 SGT weekend crypto digest; or `/research`)
 1. `market_overview.py` — SPY/QQQ/IWM, sector ETFs, VIX, DXY, BTC/ETH, dominance; key levels.
 2. `fetch_calendar.py` — macro events (CPI, FOMC, NFP), earnings for watchlist names (next 10 days).
 3. `fetch_news.py` — headlines per watchlist ticker + market-wide.
-4. `fetch_sources.py` — items from `config/sources.yaml` since last run.
+4. `fetch_sources.py` — RSS items from `config/sources.yaml` (last 24h, deduped).
 5. `watchlist_state.py` — trend, distance to rule triggers ("near setup").
 6. LLM synthesizes: **≤ 300-word Telegram brief** + full brief row in Sheets `Research` tab.
 Rule: every claim cites its source; no price predictions stated as fact.
@@ -99,7 +102,7 @@ Rule: every claim cites its source; no price predictions stated as fact.
 4. Produce report vs. promotion gate (§5). Log to Sheets `Backtests` tab.
 5. If it passes, **propose** promotion; user approves; `promote_rules.md` writes `config/rules/<id>.yaml`.
 
-### entry-scanner (cron after US close + every 4H for crypto; or `/scan`)
+### entry-scanner (per `config/schedule.yaml`: after US close ~04:15/05:15 SGT, crypto on 4H/1D UTC closes; or `/scan`)
 - `scan.py` loads `config/rules/*.yaml` (status: active), fetches OHLCV, evaluates on **closed candles only**.
 - Match → Telegram alert + Sheets `Signals` row. Dedupe: one alert per (rule, ticker, candle).
 - The subagent (on `/scan`) may add context (upcoming earnings, news) but cannot change the signal.
@@ -177,8 +180,10 @@ TradingView has no official data API. `fetch_ohlcv.py` takes `--provider`, so th
 
 ## 10. Inputs needed from the user
 
-- Watchlist (stocks/ETFs + crypto pairs)
-- Research sources (newsletter/RSS/YouTube/X)
-- Telegram bot token + chat id (via @BotFather), Google Sheet to use
-- Account size / risk % for position-size hints (optional)
-- Timezone (assumed America/New_York for scheduling)
+- [x] Timezone: Asia/Singapore
+- [x] Research sources: decided 2026-10-18 (see `config/sources.yaml` for the list and exclusions)
+- [ ] TradingView watchlist export → `config/watchlist.txt`
+- [ ] Telegram bot token + chat id (via @BotFather)
+- [ ] Google Sheet to use
+- [ ] Finnhub API key (free) — verify calendar coverage
+- [ ] Account size for position-size hints (optional, `config/risk.yaml`)
