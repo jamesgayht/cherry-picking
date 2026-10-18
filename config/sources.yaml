@@ -19,12 +19,18 @@ movers:                           # "What's moving / which sectors are hot?"
     pages: [screener_top_gainers, screener_new_high, sector_performance]
     rate_limit_seconds: 3
 
-calendar:                         # "What's on the calendar?"
-  provider: finnhub               # alt: fmp
-  api_key_env: FINNHUB_API_KEY
-  verify: true                    # confirm free tier covers economic + earnings calendar in Phase 1
-  lookahead_days: 10
-  economic_importance: high       # CPI, FOMC, NFP, PCE, GDP
+calendar:                         # "What's on the calendar?"  (verified 2026-10-18)
+  earnings:
+    provider: finnhub             # free tier OK: /calendar/earnings
+    api_key_env: FINNHUB_API_KEY
+    lookahead_days: 10
+  economic:
+    provider: forexfactory        # free weekly JSON; Finnhub economic calendar is premium (403)
+    url: https://nfs.faireconomy.media/ff_calendar_thisweek.json
+    countries: [USD]
+    impact: [High]                # CPI, FOMC, NFP, PCE, GDP, retail sales
+    note: covers current week only; times are US Eastern - convert to SGT
+                                  # finnhub free tier also gives: /quote, /company-news, /news
 
 sentiment:
   crypto_fear_greed:
