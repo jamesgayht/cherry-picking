@@ -6,13 +6,13 @@
 
 **Architecture:** `tools/common` holds the shared contract: config and secrets loading, secret redaction, stderr logging, and JSON stdout/exit-code handling. `tools/delivery/telegram_send.py` and `tools/delivery/sheets_append.py` are thin CLIs over pure, injectable functions (an HTTP session or a gspread client is passed in), so every behavior is unit-tested with fakes and no network access. Tools run as modules: `.venv/bin/python -m tools.delivery.telegram_send ...`.
 
-**Tech Stack:** Python 3.11 (`/opt/homebrew/bin/python3.11`), python-dotenv, PyYAML, requests, gspread 6 + google-auth (service account), pytest.
+**Tech Stack:** Python 3.14 (`/opt/homebrew/bin/python3.14`, pinned in `.python-version`), python-dotenv, PyYAML, requests, gspread 6 + google-auth (service account), pytest.
 
 **Spec:** `docs/plans/2026-10-18-trading-bot-design.md` (§3 directory structure, §6 delivery formats, §8 safety, §9 Phase 0 row) and `CLAUDE.md` (Tool Contract, Safety Rules).
 
 ## Global Constraints
 
-- Python 3.11+, venv at `.venv/`, deps in `requirements.txt`.
+- Python 3.14 (pinned in `.python-version`), venv at `.venv/`, deps in `requirements.txt`. Before changing the version, confirm wheels exist for every dependency, including numba and vectorbt.
 - Input from CLI args (argparse). Output is **JSON on stdout**, logs go to **stderr**, failures exit non-zero with JSON `{"error": ...}` on stdout. This includes argparse usage errors (exit 2).
 - No hidden state. Config comes from `config/`, secrets from `.env` via `tools/common/config.py`.
 - **Never print or log secrets.** Every error message and log line passes through `redact()`.
@@ -71,7 +71,7 @@
 
 ```bash
 git switch -c phase-0-foundation
-/opt/homebrew/bin/python3.11 -m venv .venv
+/opt/homebrew/bin/python3.14 -m venv .venv
 ```
 Set `requirements.txt` to:
 ```

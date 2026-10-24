@@ -29,7 +29,7 @@ Judgment goes to agents and execution goes to tools. **Rule evaluation and backt
 
 ## Tool Contract
 
-- Python 3.11+, venv at `.venv/`, deps in `requirements.txt`.
+- Python 3.14 (pinned in `.python-version`), venv at `.venv/`, deps in `requirements.txt`. Before changing the version, confirm wheels exist for every dependency, including numba and vectorbt.
 - Input comes from CLI args (argparse). Output is **JSON on stdout**, logs go to stderr, and failures exit non-zero with a JSON `{"error": ...}`.
 - No hidden state. Read config from `config/` and secrets from `.env` via `tools/common/config.py`.
 - Every tool has a test in `tests/`. Indicator and rule logic must be unit-tested.
