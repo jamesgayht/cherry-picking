@@ -34,12 +34,14 @@ Judgment goes to agents and execution goes to tools. **Rule evaluation and backt
 - No hidden state. Read config from `config/` and secrets from `.env` via `tools/common/config.py`.
 - Every tool has a test in `tests/`. Indicator and rule logic must be unit-tested.
 
-## Backtest Hygiene
+## Backtesting: Find Gaps, Don't Validate
 
-- Write the hypothesis to `backtests/<id>/hypothesis.md` **before** testing, and log how many variants were tried.
-- Signals are computed on the close of bar *t* and the entry happens at the open of bar *t+1*. No lookahead and no repainting.
-- Model fees and slippage. Validate out-of-sample with walk-forward testing. Check parameter stability.
-- A strategy is promoted only if it passes the gate in the design doc (§5).
+The purpose of a backtest is to **find where a strategy breaks**, not to prove it works. The default verdict is reject. Watch for the AI failure mode: tuning until the result looks good, then reporting the good numbers first.
+- Write `backtests/<id>/hypothesis.md` with **kill criteria before any test**. Log every variant to `variants.log`.
+- Never adjust parameters after seeing out-of-sample results. A change creates a new, counted variant.
+- Run all the kill tests in design doc §5: baselines (buy-and-hold and random entries), regime split, parameter sensitivity, 2× costs, outlier removal, Monte Carlo, lookahead/survivorship audit, and multiple-testing correction.
+- The `strategy-critic` subagent reviews with a fresh context (it never sees the researcher's reasoning) and writes `gaps.md`. Reports show **gaps first, metrics second**.
+- Signals are computed on the close of bar *t* and the entry happens at the open of bar *t+1*. Fees and slippage are always on.
 
 ## How to Operate
 
@@ -50,7 +52,7 @@ Judgment goes to agents and execution goes to tools. **Rule evaluation and backt
 ## File Structure
 
 ```
-.claude/agents/     # subagents: research-analyst, strategy-researcher, entry-scanner
+.claude/agents/     # subagents: research-analyst, strategy-researcher, strategy-critic, entry-scanner
 .claude/commands/   # /research, /strategy, /backtest, /scan
 config/             # PERSISTENT, git-tracked: watchlist, sources, risk, rules/
 backtests/          # PERSISTENT: hypothesis + reports (evidence for promotion)
