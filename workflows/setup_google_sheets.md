@@ -25,7 +25,7 @@ Let `tools/delivery/sheets_append.py` append rows to your Google Sheet through a
 - A `Healthcheck` tab with one row.
 
 ## Edge cases
-- Error "share it with … as Editor": step 4 was skipped, or `GOOGLE_SHEETS_ID` is wrong.
+- Error "share it with … as Editor": step 4 was skipped, `GOOGLE_SHEETS_ID` is wrong, or the Sheets API isn't enabled (step 1). Google answers 403 for an unshared sheet and 404 for a wrong id; gspread 6 surfaces these as a bare `PermissionError` and `SpreadsheetNotFound`, and the tool maps both to this hint.
 - Error "service account file not found": step 2 or 3 was skipped.
 - Values are written RAW, so formulas (`=...`) are stored as text and never evaluated.
 - Tab names are case-sensitive. A missing tab lists the available ones; pass `--create-tab` to create it.

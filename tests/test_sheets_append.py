@@ -90,3 +90,22 @@ def test_dry_run_with_timestamp_needs_no_secrets(tmp_path, monkeypatch):
     (ts, text), = out["rows"]
     assert text == "hi"
     assert datetime.fromisoformat(ts).utcoffset() == timedelta(hours=8)
+
+class FakeHTTPResponse:
+    def __init__(self, status):
+        self.status_code, self.text = status, ""
+    def json(self):
+        return {"error": {"code": self.status_code, "message": "denied", "status": "X"}}
+
+def gspread_client_failing_with(status):
+    class FailingHTTPClient:
+        def __init__(self, auth, session=None):
+            pass
+        def fetch_sheet_metadata(self, *a, **kw):
+            raise gspread.exceptions.APIError(FakeHTTPResponse(status))
+    return gspread.Client(auth=None, http_client=FailingHTTPClient)
+
+@pytest.mark.parametrize("status", [403, 404])
+def test_real_gspread_access_errors_give_share_hint(status):
+    with pytest.raises(ConfigError, match="share it with bot@x as Editor"):
+        sa.open_worksheet(gspread_client_failing_with(status), "id", "Research", account_email="bot@x")

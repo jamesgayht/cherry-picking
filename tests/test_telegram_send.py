@@ -125,3 +125,32 @@ def test_connection_error_message_is_redacted_end_to_end(tmp_path, monkeypatch, 
     cap = capsys.readouterr()
     assert "LEAKY" not in cap.out + cap.err
     assert "error" in json.loads(cap.out)
+
+def test_split_counts_utf16_units_like_telegram():
+    text = "🟢 ok\n" * 800                       # 4000 code points, 4800 UTF-16 units
+    chunks = split_message(text)
+    assert len(chunks) == 2
+    assert all(len(c.encode("utf-16-le")) // 2 <= 4096 for c in chunks)
+    assert "".join(chunks) == text
+
+@pytest.mark.parametrize("text", ["x" * 4096 + "\n", "\n" + "x" * 5000, "x" * 4096 + "\n" * 5000 + "y"],
+                         ids=["trailing-newline", "leading-newline", "newline-run"])
+def test_split_never_yields_whitespace_only_chunks(text):
+    chunks = split_message(text)
+    assert all(c.strip() for c in chunks)
+    assert "".join(chunks).split() == text.split()   # only whitespace Telegram would trim is dropped
+
+def test_env_only_token_is_redacted_end_to_end(tmp_path, monkeypatch, capsys):
+    env = tmp_path / ".env"
+    env.write_text("TELEGRAM_BOT_TOKEN=   # from @BotFather\n")
+    monkeypatch.setattr(config, "ENV_FILE", env)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "888888:ENVONLYENVONLY")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "12345678")
+    def boom(*a, **kw):
+        raise requests.ConnectionError("HTTPSConnectionPool: /bot888888:ENVONLYENVONLY/sendMessage")
+    monkeypatch.setattr(requests.Session, "post", boom)
+    monkeypatch.setattr(tg.time, "sleep", lambda s: None)
+    with pytest.raises(SystemExit):
+        tio.run(lambda: tg.main(["--text", "hi"]))
+    cap = capsys.readouterr()
+    assert "ENVONLY" not in cap.out + cap.err

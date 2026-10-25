@@ -12,6 +12,9 @@ ENV_FILE = ROOT / ".env"
 # Values shorter than this are not treated as secrets by redact().
 MIN_SECRET_LEN = 8
 
+# Every value get_secret() has returned, whatever its source, so redact() also masks env-only secrets.
+_issued_secrets: set[str] = set()
+
 
 class ConfigError(Exception):
     pass
@@ -37,6 +40,7 @@ def _env_file_values(env_file: Path | None) -> dict[str, str]:
 def get_secret(name: str, default: str | None = None, env_file: Path | None = None) -> str:
     value = os.environ.get(name) or _env_file_values(env_file).get(name)
     if value:
+        _issued_secrets.add(value)
         return value
     if default is not None:
         return default
@@ -47,6 +51,7 @@ def redact(text: str, env_file: Path | None = None) -> str:
     file_values = _env_file_values(env_file)
     secrets = set(file_values.values())
     secrets.update(os.environ[k] for k in file_values if os.environ.get(k))
+    secrets.update(_issued_secrets)
     for secret in sorted((s for s in secrets if len(s) >= MIN_SECRET_LEN), key=len, reverse=True):
         text = text.replace(secret, "***")
     return text

@@ -1,6 +1,8 @@
 """Send a message to the configured Telegram chat. Splits long text, retries 429s and network errors."""
 import sys
 import time
+from bisect import bisect_right
+from itertools import accumulate
 
 import requests
 
@@ -23,16 +25,24 @@ class TelegramError(Exception):
 
 
 def split_message(text: str, limit: int = TELEGRAM_LIMIT) -> list[str]:
+    """Split text into chunks of at most `limit` UTF-16 code units, the unit Telegram counts.
+
+    Breaks after the last newline that fits, else hard-splits between code points. Whitespace-only
+    chunks are dropped (Telegram trims them to empty and rejects them); all other text is kept.
+    """
     if not text.strip():
         raise ValueError("message text is empty")
+    # units[i] = UTF-16 length of text[:i]; characters outside the BMP (emoji) count as 2.
+    units = [0, *accumulate(2 if ord(c) > 0xFFFF else 1 for c in text)]
     chunks, pos = [], 0
-    while len(text) - pos > limit:
-        newline = text.rfind("\n", pos, pos + limit)
-        end = newline + 1 if newline != -1 else pos + limit
+    while units[-1] - units[pos] > limit:
+        fit = max(bisect_right(units, units[pos] + limit) - 1, pos + 1)
+        newline = text.rfind("\n", pos + 1, fit)
+        end = newline + 1 if newline != -1 else fit
         chunks.append(text[pos:end])
         pos = end
     chunks.append(text[pos:])
-    return chunks
+    return [c for c in chunks if c.strip()]
 
 
 def _send_chunk(session, url: str, payload: dict, *, sleep, max_attempts: int, sent: list[int]) -> int:

@@ -52,10 +52,12 @@ def service_account_email(credentials_file: Path) -> str:
 
 def open_worksheet(client, sheet_id: str, tab: str, *, create: bool = False,
                    account_email: str = "the service account"):
-    no_access = ConfigError(f"cannot open the spreadsheet: share it with {account_email} as Editor ({SETUP_WORKFLOW})")
+    no_access = ConfigError(f"cannot open the spreadsheet: share it with {account_email} as Editor, check "
+                            f"GOOGLE_SHEETS_ID, and make sure the Google Sheets API is enabled ({SETUP_WORKFLOW})")
     try:
         spreadsheet = client.open_by_key(sheet_id)
-    except gspread.exceptions.SpreadsheetNotFound:
+    except (gspread.exceptions.SpreadsheetNotFound, PermissionError):
+        # gspread 6 turns a 404 into SpreadsheetNotFound and a 403 into a bare builtin PermissionError.
         raise no_access from None
     except gspread.exceptions.APIError as e:
         if e.code in (403, 404):
